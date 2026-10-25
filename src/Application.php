@@ -64,7 +64,7 @@ use Throwable;
  */
 class Application extends Container
 {
-    public const string VERSION = '1.2.2';
+    public const string VERSION = '1.2.3';
 
     /** Middleware aliases that ship with the framework. */
     public const array MIDDLEWARE_ALIASES = [

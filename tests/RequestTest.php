@@ -24,7 +24,11 @@ final class RequestTest extends TestCase
         self::assertSame('/users/5', $sub->path());
         self::assertSame('/users/5', $script->path());
         self::assertSame('/', $root->path());
-    }
+
+        // Sub-folder project rewriting into public/: /api/v1/... is served by /api/public/index.php.
+        self::assertSame('/v1/posts/7', (new Request('GET', '/api/v1/posts/7', server: ['SCRIPT_NAME' => '/api/public/index.php']))->path());
+        self::assertSame('/', (new Request('GET', '/api', server: ['SCRIPT_NAME' => '/api/public/index.php']))->path());
+        self::assertSame('/apiary', (new Request('GET', '/apiary', server: ['SCRIPT_NAME' => '/api/public/index.php']))->path(), 'only whole segments');    }
 
     public function testJsonBodyAndTypedAccessors(): void
     {

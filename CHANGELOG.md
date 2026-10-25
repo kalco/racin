@@ -11,6 +11,8 @@ All notable changes to `rokastudio/racin`. The project follows [Semantic Version
   autoload entries in `composer.json`.
 
 ### Fixed
+- Projects in a sub-folder whose `.htaccess` rewrites into `public/` (e.g. `/api/v1/...` served by
+  `/api/public/index.php`) get the right route path.
 - `g seeder` registered into an empty `$this->call()` produced invalid PHP.
 - Image uploads and deleting records with images work without `config/filesystems.php`: the `public`
   disk defaults to `public/uploads` (served at `APP_URL/uploads`) and `local` to `storage/app`.

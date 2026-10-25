@@ -180,10 +180,19 @@ class Request
         if (str_ends_with($script, '.php')) {
             $base = rtrim(str_replace('\\', '/', dirname($script)), '/');
 
+            // A project in a sub-folder whose .htaccess rewrites into public/ ("/api/v1/x" served by
+            // /api/public/index.php): the URL has no "/public", so the folder above it is the base.
+            $bases = str_ends_with($base, '/public') ? [$base, substr($base, 0, -strlen('/public'))] : [$base];
+
             if (str_starts_with($path, $script)) {
                 $path = substr($path, strlen($script));
-            } elseif ($base !== '' && ($path === $base || str_starts_with($path, $base . '/'))) {
-                $path = substr($path, strlen($base));
+            } else {
+                foreach ($bases as $candidate) {
+                    if ($candidate !== '' && ($path === $candidate || str_starts_with($path, $candidate . '/'))) {
+                        $path = substr($path, strlen($candidate));
+                        break;
+                    }
+                }
             }
         }
 
