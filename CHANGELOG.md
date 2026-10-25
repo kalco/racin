@@ -1,6 +1,12 @@
 # Changelog
 
-All notable changes to `roka/racin`. The project follows [Semantic Versioning](https://semver.org).
+All notable changes to `rokastudio/racin`. The project follows [Semantic Versioning](https://semver.org).
+
+## 1.2.1 — 2026-10-25
+
+### Changed
+- Package renamed to `rokastudio/racin` (the `roka` vendor name on Packagist belongs to someone else).
+  Namespace stays `Racin\`; replace `roka/racin` with `rokastudio/racin` in `composer.json`.
 
 ## 1.2.0 — 2026-10-25
 

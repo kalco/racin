@@ -1,5 +1,5 @@
 {
-    "name": "roka/racin",
+    "name": "rokastudio/racin",
     "description": "A small, fast PHP 8.3+ framework for JSON APIs: Rails-style controllers and generators, ActiveRecord-style models, serializers, JWT auth, queues, mail, image uploads and WebSockets.",
     "type": "library",
     "keywords": [
@@ -17,7 +17,7 @@
     "license": "MIT",
     "authors": [
         {
-            "name": "Roka",
+            "name": "Roka Studio",
             "homepage": "https://github.com/kalco"
         }
     ],

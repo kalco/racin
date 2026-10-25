@@ -4,7 +4,7 @@
 declare(strict_types=1);
 
 /*
- * Racin console for projects that require roka/racin: "vendor/bin/racin <command>".
+ * Racin console for projects that require rokastudio/racin: "vendor/bin/racin <command>".
  * The project root is the current directory (or RACIN_BASE_PATH). Projects can keep
  * their own "racin" file instead; this one only saves copying it.
  */
@@ -20,7 +20,7 @@ foreach ($candidates as $file) {
 }
 
 if (!class_exists(Racin\Application::class)) {
-    fwrite(STDERR, "Racin is not installed: run \"composer require roka/racin\" first.\n");
+    fwrite(STDERR, "Racin is not installed: run \"composer require rokastudio/racin\" first.\n");
     exit(1);
 }
 

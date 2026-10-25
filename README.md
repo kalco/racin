@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/kalco/racin/actions/workflows/tests.yml/badge.svg)](https://github.com/kalco/racin/actions/workflows/tests.yml)
 
-A small, fast PHP framework for JSON APIs, by Roka: Rails-style controllers and generators,
+A small, fast PHP framework for JSON APIs, by Roka Studio: Rails-style controllers and generators,
 ActiveRecord-style models with relations, serializers, JWT auth with roles/permissions, queues, mail,
 image uploads, translations and a WebSocket server.
 
@@ -13,7 +13,7 @@ image uploads, translations and a WebSocket server.
 ## Installation
 
 ```bash
-composer require roka/racin
+composer require rokastudio/racin
 ```
 
 The smallest application is a front controller and a routes file:
