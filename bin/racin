@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * Racin console for projects that require roka/racin: "vendor/bin/racin <command>".
+ * The project root is the current directory (or RACIN_BASE_PATH). Projects can keep
+ * their own "racin" file instead; this one only saves copying it.
+ */
+
+$autoload = $GLOBALS['_composer_autoload_path'] ?? null;
+$candidates = array_filter([$autoload, getcwd() . '/vendor/autoload.php', dirname(__DIR__) . '/vendor/autoload.php', dirname(__DIR__, 3) . '/autoload.php']);
+
+foreach ($candidates as $file) {
+    if (is_file($file)) {
+        require $file;
+        break;
+    }
+}
+
+if (!class_exists(Racin\Application::class)) {
+    fwrite(STDERR, "Racin is not installed: run \"composer require roka/racin\" first.\n");
+    exit(1);
+}
+
+$base = getenv('RACIN_BASE_PATH') ?: (string) getcwd();
+$app = is_file($base . '/bootstrap/app.php') ? require $base . '/bootstrap/app.php' : new Racin\Application($base);
+
+exit($app->runConsole($argv));

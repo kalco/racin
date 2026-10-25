@@ -1,0 +1,121 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers;
+
+use Racin\Auth\AuthenticationException;
+use Racin\Auth\AuthorizationException;
+use Racin\Auth\Authorizable;
+use Racin\Auth\Guard;
+use Racin\Database\Model;
+use Racin\Http\Attributes\BeforeAction;
+use Racin\Http\Controller;
+use Racin\Image\ImageUploader;
+
+/**
+ * Base for API controllers (like Rails' ApplicationController).
+ *
+ * Every action requires a valid token unless the controller skips the filter:
+ *     #[SkipBeforeAction('authorizeRequest', only: ['index', 'show'])]
+ */
+#[BeforeAction('authorizeRequest')]
+abstract class ApiController extends Controller
+{
+    protected const int MAX_PER_PAGE = 100;
+
+    /**
+     * Filter: authenticate the bearer token (401 otherwise). Sets currentUser().
+     */
+    protected function authorizeRequest(Guard $guard): void
+    {
+        // Already done by the throttle middleware (or "auth") for this request.
+        if ($this->currentUser() === null) {
+            $guard->authenticate($this->request);
+        }
+    }
+
+    /**
+     * 403 unless the current user has the "<resource>.<action>" permission: checkPermission('users', 'view').
+     */
+    protected function checkPermission(string $resource, string $action): void
+    {
+        $user = $this->currentUser() ?? throw new AuthenticationException();
+
+        if (!$user instanceof Authorizable || !$user->hasPermission("{$resource}.{$action}")) {
+            throw new AuthorizationException();
+        }
+    }
+
+    /**
+     * 403 unless the condition holds.
+     */
+    protected function authorize(bool $allowed, string $message = ''): void
+    {
+        if (!$allowed) {
+            throw new AuthorizationException($message);
+        }
+    }
+
+    protected function perPage(int $default = 20): int
+    {
+        return min(self::MAX_PER_PAGE, max(1, $this->request->integer('per_page', $default)));
+    }
+
+    protected function page(): int
+    {
+        return max(1, $this->request->integer('page', 1));
+    }
+
+    /**
+     * "%term%" for LIKE/ILIKE with %, _ and \ in the term escaped.
+     */
+    protected function likePattern(string $term): string
+    {
+        return '%' . addcslashes($term, '%_\\') . '%';
+    }
+
+    /**
+     * Validate and store an uploaded image (multipart field $field); returns its path, or null when none was sent.
+     */
+    protected function storeImage(string $field, string $directory): ?string
+    {
+        if ($this->request->file($field) === null) {
+            return null;
+        }
+
+        $max = (int) config('filesystems.images.max_kilobytes', 5120);
+        $this->validate([$field => "image|mimes:jpg,jpeg,png,webp,gif|max:{$max}"]);
+
+        return $this->container->make(ImageUploader::class)->store($this->request->file($field), $directory, $field)['path'];
+    }
+
+    /**
+     * Store a newly uploaded image on $model->$field. Returns the replaced path (delete it after saving).
+     *
+     * @return list<string>
+     */
+    protected function replaceImage(Model $model, string $field, string $directory): array
+    {
+        $path = $this->storeImage($field, $directory);
+
+        if ($path === null) {
+            return [];
+        }
+
+        $old = $model->getAttribute($field);
+        $model->setAttribute($field, $path);
+
+        return is_string($old) && $old !== '' ? [$old] : [];
+    }
+
+    /**
+     * @param list<string> $paths
+     */
+    protected function deleteImages(array $paths): void
+    {
+        foreach ($paths as $path) {
+            $this->container->make(ImageUploader::class)->delete($path);
+        }
+    }
+}
