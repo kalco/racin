@@ -2,13 +2,31 @@
 
 All notable changes to `rokastudio/racin`. The project follows [Semantic Versioning](https://semver.org).
 
-## 1.2.1 — 2026-10-25
+## Unreleased
+
+### Added
+- `vendor/bin/racin init`: starter files for a new API (config, `public/` with `.htaccess` and uploads,
+  `.env` with a new `APP_KEY`, auth routes, `User` model and migration, `AuthController`, admin seeder,
+  `ApiTestCase` with an in-memory SQLite `phpunit.xml`) and the `App\` / `Database\Seeders\` / `Tests\`
+  autoload entries in `composer.json`.
+
+### Fixed
+- `g seeder` registered into an empty `$this->call()` produced invalid PHP.
+- Image uploads and deleting records with images work without `config/filesystems.php`: the `public`
+  disk defaults to `public/uploads` (served at `APP_URL/uploads`) and `local` to `storage/app`.
+
+
+
+## 1.2.2 - 2026-10-25
+- unit test
+
+## 1.2.1 - 2026-10-25
 
 ### Changed
 - Package renamed to `rokastudio/racin` (the `roka` vendor name on Packagist belongs to someone else).
   Namespace stays `Racin\`; replace `roka/racin` with `rokastudio/racin` in `composer.json`.
 
-## 1.2.0 — 2026-10-25
+## 1.2.0 - 2026-10-25
 
 First public release as a Composer package.
 

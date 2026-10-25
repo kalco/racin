@@ -1,0 +1,7 @@
+/vendor/
+/.env
+/.phpunit.cache/
+/bootstrap/cache/*.php
+/database/*.sqlite
+.idea/
+.vscode/

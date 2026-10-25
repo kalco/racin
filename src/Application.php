@@ -64,7 +64,7 @@ use Throwable;
  */
 class Application extends Container
 {
-    public const string VERSION = '1.2.1';
+    public const string VERSION = '1.2.2';
 
     /** Middleware aliases that ship with the framework. */
     public const array MIDDLEWARE_ALIASES = [
@@ -344,7 +344,17 @@ class Application extends Container
 
         $this->singleton(TokenBlacklist::class, fn (): TokenBlacklist => new TokenBlacklist($this->make(Cache::class)));
 
-        $this->singleton(StorageManager::class, fn (): StorageManager => new StorageManager((array) $config->get('filesystems', [])));
+        // Without config/filesystems.php: "public" = public/uploads served at APP_URL/uploads, "local" = storage/app.
+        $this->singleton(StorageManager::class, fn (): StorageManager => new StorageManager(array_replace_recursive([
+            'default' => 'public',
+            'disks' => [
+                'public' => [
+                    'root' => $this->basePath('public' . DIRECTORY_SEPARATOR . 'uploads'),
+                    'url' => rtrim((string) $config->get('app.url', env('APP_URL', '')), '/') . '/uploads',
+                ],
+                'local' => ['root' => $this->storagePath('app')],
+            ],
+        ], (array) $config->get('filesystems', []))));
 
         $this->singleton(ImageUploader::class, fn (): ImageUploader => new ImageUploader(
             $this->make(StorageManager::class)->disk($config->get('filesystems.images.disk')),

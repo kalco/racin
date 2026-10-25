@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // sync (run immediately) | database | redis   (database/redis need "vendor/bin/racin queue:work")
+    'default' => env('QUEUE_CONNECTION', 'sync'),
+
+    'connections' => [
+        'sync' => [
+            'driver' => 'sync',
+        ],
+
+        // Needs "jobs" and "failed_jobs" tables (create them with a migration).
+        'database' => [
+            'driver' => 'database',
+            'connection' => null,      // config/database.php connection; null = default
+            'table' => 'jobs',
+            'retry_after' => 90,       // seconds before a job reserved by a crashed worker runs again
+            'skip_locked' => true,     // MySQL 8+ / MariaDB 10.6+ / PostgreSQL
+        ],
+
+        'redis' => [
+            'driver' => 'redis',
+            'connection' => 'default', // config/database.php "redis" connection
+            'prefix' => '{{SLUG}}:queue:',
+            'retry_after' => 90,
+        ],
+    ],
+
+    'failed' => [
+        'connection' => null,
+        'table' => 'failed_jobs',
+    ],
+];

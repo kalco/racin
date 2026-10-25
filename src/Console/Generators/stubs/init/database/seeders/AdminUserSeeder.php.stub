@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Racin\Database\Seeder;
+use Racin\Support\Hash;
+
+/**
+ * The first administrator, from ADMIN_NAME / ADMIN_EMAIL / ADMIN_PASSWORD in .env.
+ * Skipped while ADMIN_PASSWORD is empty; running it again updates the same user.
+ */
+final class AdminUserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $email = (string) env('ADMIN_EMAIL', '');
+        $password = (string) env('ADMIN_PASSWORD', '');
+
+        if ($email === '' || $password === '') {
+            $this->say('  ADMIN_EMAIL / ADMIN_PASSWORD are not set in .env: no admin user created.');
+
+            return;
+        }
+
+        $admin = User::findByEmail($email) ?? new User();
+        $admin->fill(['name' => (string) env('ADMIN_NAME', 'Admin'), 'email' => $email, 'password' => Hash::make($password)]);
+        $admin->forceFill(['role' => 'admin'])->save();
+
+        $this->say("  admin: {$admin->email}");
+    }
+}

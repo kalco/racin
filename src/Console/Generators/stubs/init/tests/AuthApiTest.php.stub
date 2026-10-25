@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests;
+
+final class AuthApiTest extends ApiTestCase
+{
+    public function testRegisterLoginAndMe(): void
+    {
+        $registered = $this->request('POST', '/v1/auth/register', [
+            'name' => 'Ana',
+            'email' => 'Ana@Example.com',
+            'password' => 'secret-123',
+            'password_confirmation' => 'secret-123',
+        ]);
+        $this->assertStatus(201, $registered);
+        self::assertSame('ana@example.com', $this->json($registered)['data']['user']['email']);
+        self::assertArrayNotHasKey('password', $this->json($registered)['data']['user']);
+
+        $login = $this->request('POST', '/v1/auth/login', ['email' => 'ana@example.com', 'password' => 'secret-123']);
+        $this->assertStatus(200, $login);
+        $token = $this->json($login)['data']['token']['access_token'];
+
+        $me = $this->request('GET', '/v1/auth/me', [], ['Authorization' => "Bearer {$token}"]);
+        $this->assertStatus(200, $me);
+        self::assertSame('user', $this->json($me)['data']['role']);
+    }
+
+    public function testWrongPasswordAndMissingTokenAre401(): void
+    {
+        $this->actingAs('ana@example.com');
+
+        $this->assertStatus(401, $this->request('POST', '/v1/auth/login', ['email' => 'ana@example.com', 'password' => 'wrong']));
+        $this->assertStatus(401, $this->request('GET', '/v1/auth/me'));
+        $this->assertStatus(422, $this->request('POST', '/v1/auth/register', ['email' => 'not-an-email']));
+    }
+
+    public function testLogoutRevokesTheToken(): void
+    {
+        [, $auth] = $this->actingAs('ana@example.com');
+
+        $this->assertStatus(204, $this->request('POST', '/v1/auth/logout', [], $auth));
+        $this->assertStatus(401, $this->request('GET', '/v1/auth/me', [], $auth));
+    }
+}

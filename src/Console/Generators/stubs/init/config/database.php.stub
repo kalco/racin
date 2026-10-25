@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // mysql (MySQL / MariaDB) | pgsql | sqlite
+    'default' => env('DB_CONNECTION', 'mysql'),
+
+    'connections' => [
+        'mysql' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => (int) env('DB_PORT', 3306),
+            'database' => env('DB_DATABASE', ''),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            // Added to every table name, e.g. "app_" for a database shared with another application.
+            'prefix' => env('DB_PREFIX', ''),
+            'strict' => true,
+            'persistent' => false,
+        ],
+
+        'pgsql' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => (int) env('DB_PORT', 5432),
+            'database' => env('DB_DATABASE', ''),
+            'username' => env('DB_USERNAME', 'postgres'),
+            'password' => env('DB_PASSWORD', ''),
+            'schema' => env('PG_SCHEMA', 'public'),
+            'sslmode' => env('PG_SSLMODE', 'prefer'),
+            'prefix' => env('DB_PREFIX', ''),
+        ],
+
+        // The tests use an in-memory database (DB_SQLITE_PATH=:memory: in phpunit.xml).
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_SQLITE_PATH', base_path('database/database.sqlite')),
+            'prefix' => '',
+        ],
+    ],
+
+    // phpredis connections (cache, queue).
+    'redis' => [
+        'default' => [
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'port' => (int) env('REDIS_PORT', 6379),
+            'password' => env('REDIS_PASSWORD'),
+            'database' => (int) env('REDIS_DB', 0),
+            'timeout' => 2.0,
+        ],
+    ],
+];

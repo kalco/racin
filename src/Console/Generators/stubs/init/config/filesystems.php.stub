@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'default' => 'public',
+
+    'disks' => [
+        // Served by the web server: files are reachable at <url>/<path>.
+        // public/uploads/.htaccess stops scripts from running in this folder.
+        'public' => [
+            'root' => base_path('public/uploads'),
+            'url' => rtrim((string) env('APP_URL', 'http://localhost'), '/') . '/uploads',
+        ],
+
+        // Private files (exports, documents), not reachable over HTTP.
+        'local' => [
+            'root' => storage_path('app'),
+        ],
+    ],
+
+    // Uploaded images are re-encoded and resized (Racin\Image\ImageUploader).
+    'images' => [
+        'disk' => 'public',
+        'max_width' => 1600,
+        'max_height' => 1600,
+        'thumb_width' => 400,
+        'thumb_height' => 400,
+        'format' => 'webp',     // webp | jpeg | png
+        'quality' => 82,
+        'max_kilobytes' => 5120,
+    ],
+];

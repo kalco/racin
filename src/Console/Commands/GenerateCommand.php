@@ -333,7 +333,13 @@ final class GenerateCommand extends Command
             return;
         }
 
-        $updated = preg_replace('/\$this->call\(([^;]*?)\);/s', "\$this->call(\$1, {$class}::class);", $source, 1, $replaced);
+        $updated = preg_replace_callback(
+            '/\$this->call\(([^;]*?)\);/s',
+            static fn (array $m): string => '$this->call(' . (trim($m[1]) === '' ? '' : rtrim($m[1], ", \n\t") . ', ') . "{$class}::class);",
+            $source,
+            1,
+            $replaced,
+        );
 
         if ($replaced === 0 || !is_string($updated)) {
             $this->output->comment("  Add {$class}::class to DatabaseSeeder's \$this->call(...) to include it in db:seed.");

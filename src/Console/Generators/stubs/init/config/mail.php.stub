@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // smtp | log (writes to storage/logs) | array (tests)
+    'mailer' => env('MAIL_MAILER', 'log'),
+
+    'smtp' => [
+        'host' => env('MAIL_HOST', '127.0.0.1'),
+        'port' => (int) env('MAIL_PORT', 1025),
+        'encryption' => env('MAIL_ENCRYPTION'),   // tls (STARTTLS) | ssl | empty
+        'username' => env('MAIL_USERNAME'),
+        'password' => env('MAIL_PASSWORD'),
+        'timeout' => 10,
+        'local_domain' => env('MAIL_EHLO_DOMAIN', 'localhost'),
+    ],
+
+    'from' => [
+        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
+        'name' => env('MAIL_FROM_NAME', '{{APP_NAME}}'),
+    ],
+];

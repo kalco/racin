@@ -1,0 +1,99 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controllers\Api\V1;
+
+use App\Controllers\ApiController;
+use App\Models\User;
+use Racin\Auth\AuthenticationException;
+use Racin\Auth\Jwt;
+use Racin\Auth\TokenBlacklist;
+use Racin\Http\Attributes\SkipBeforeAction;
+use Racin\Http\Response;
+use Racin\Support\Hash;
+
+/**
+ * /v1/auth: register, login, current user and tokens.
+ */
+#[SkipBeforeAction('authorizeRequest', only: ['register', 'login'])]
+final class AuthController extends ApiController
+{
+    public function __construct(private readonly Jwt $jwt, private readonly TokenBlacklist $blacklist)
+    {
+    }
+
+    // POST /v1/auth/register  {name, email, password, password_confirmation}
+    public function register(): Response
+    {
+        $data = $this->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|max:72|confirmed',
+        ]);
+
+        $user = User::create(['name' => $data['name'], 'email' => $data['email'], 'password' => Hash::make($data['password'])])->refresh();
+
+        return $this->render(json: ['user' => $user, 'token' => $this->issueToken($user)], status: 'created');
+    }
+
+    // POST /v1/auth/login  {email, password}
+    public function login(): Response
+    {
+        $credentials = $this->validate(['email' => 'required|email', 'password' => 'required|string']);
+        $user = User::findByEmail($credentials['email']);
+
+        // Verify against a dummy hash when the user does not exist so timing does not reveal valid emails.
+        if (!Hash::verify($credentials['password'], $user?->password ?? Hash::DUMMY) || $user === null) {
+            throw new AuthenticationException('These credentials do not match our records.');
+        }
+
+        if (Hash::needsRehash($user->password)) {
+            $user->update(['password' => Hash::make($credentials['password'])]);
+        }
+
+        return $this->render(json: ['user' => $user, 'token' => $this->issueToken($user)]);
+    }
+
+    // GET /v1/auth/me
+    public function me(): Response
+    {
+        return $this->render(json: $this->currentUser());
+    }
+
+    // POST /v1/auth/refresh: a new token; the current one is revoked
+    public function refresh(): Response
+    {
+        $this->blacklist->revoke((array) $this->request->attribute('token', []));
+
+        return $this->render(json: ['token' => $this->issueToken($this->currentUser())]);
+    }
+
+    // POST /v1/auth/logout: revoke the token used for this request
+    public function logout(): Response
+    {
+        $this->blacklist->revoke((array) $this->request->attribute('token', []));
+
+        return $this->head('no_content');
+    }
+
+    // POST /v1/auth/logout-all: revoke every token of the user
+    public function logoutAll(): Response
+    {
+        $this->currentUser()->bumpTokenVersion();
+
+        return $this->head('no_content');
+    }
+
+    /**
+     * @return array{access_token: string, token_type: string, expires_in: int}
+     */
+    private function issueToken(User $user): array
+    {
+        return [
+            'access_token' => $this->jwt->encode(['sub' => $user->id, 'ver' => $user->token_version]),
+            'token_type' => 'Bearer',
+            'expires_in' => $this->jwt->ttl(),
+        ];
+    }
+}

@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use Racin\Database\Seeder;
+
+/**
+ * vendor/bin/racin db:seed   (seeders made by "g seeder" / "g scaffold" are added here)
+ */
+final class DatabaseSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $this->call(AdminUserSeeder::class);
+    }
+}

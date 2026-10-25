@@ -1,0 +1,71 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Racin\Auth\Authorizable;
+use Racin\Database\Model;
+
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string $role
+ * @property int $token_version
+ */
+final class User extends Model implements Authorizable
+{
+    /**
+     * Permissions of each role ("<resource>.<action>", checked by ApiController::checkPermission()).
+     * Admins have every permission. Generated resources need "<table>.manage" to write.
+     */
+    public const array PERMISSIONS = [
+        'user' => [],
+        // 'editor' => ['posts.manage'],
+    ];
+
+    protected array $fillable = ['name', 'email', 'password'];
+
+    protected array $hidden = ['password', 'token_version'];
+
+    protected array $casts = ['id' => 'int', 'token_version' => 'int'];
+
+    protected array $rules = [
+        'name' => 'required|string|max:100',
+        'email' => 'required|email|max:255|unique:users,email,{id}',
+        'password' => 'required|string',
+    ];
+
+    public static function findByEmail(string $email): ?self
+    {
+        return self::findBy('email', mb_strtolower(trim($email)));
+    }
+
+    public function hasRole(string ...$roles): bool
+    {
+        return in_array($this->role, $roles, true);
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->role === 'admin' || in_array($permission, self::PERMISSIONS[$this->role] ?? [], true);
+    }
+
+    /**
+     * Invalidate every token issued so far (logout everywhere).
+     */
+    public function bumpTokenVersion(): void
+    {
+        self::query()->where('id', $this->id)->increment('token_version');
+        $this->refresh();
+    }
+
+    protected function beforeValidation(): void
+    {
+        if (is_string($this->email)) {
+            $this->email = mb_strtolower(trim($this->email));
+        }
+    }
+}

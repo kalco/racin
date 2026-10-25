@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests;
+
+use App\Models\User;
+use PHPUnit\Framework\TestCase;
+use Racin\Application;
+use Racin\Auth\Jwt;
+use Racin\Database\Migrations\Migrator;
+use Racin\Http\JsonResponse;
+use Racin\Http\Request;
+use Racin\Http\Response;
+use Racin\Support\Hash;
+
+/**
+ * Boots the application against an in-memory SQLite database built by the real
+ * migrations (see phpunit.xml) and sends requests through the kernel.
+ */
+abstract class ApiTestCase extends TestCase
+{
+    protected Application $app;
+
+    protected function setUp(): void
+    {
+        $this->app = (new Application(dirname(__DIR__)))->handleErrors(false)->bootstrap();
+        $this->app->make(Migrator::class)->migrate();
+    }
+
+    /**
+     * A user (created on first use) and an Authorization header for them.
+     *
+     * @return array{0: User, 1: array<string, string>}
+     */
+    protected function actingAs(string $email = 'user@example.com', bool $admin = false, ?string $role = null): array
+    {
+        $user = User::findByEmail($email) ?? User::create(['name' => ucfirst((string) strstr($email, '@', true)), 'email' => $email, 'password' => Hash::make('password')]);
+
+        if ($admin || $role !== null) {
+            $user->forceFill(['role' => $role ?? 'admin'])->save();
+        }
+
+        $token = $this->app->make(Jwt::class)->encode(['sub' => $user->id, 'ver' => $user->refresh()->token_version]);
+
+        return [$user, ['Authorization' => 'Bearer ' . $token]];
+    }
+
+    /**
+     * @param array<string, mixed> $data query for GET, JSON body otherwise
+     * @param array<string, string> $headers
+     */
+    protected function request(string $method, string $uri, array $data = [], array $headers = []): Response
+    {
+        return $this->app->handle(Request::create($method, $uri, $data, $headers + ['Accept' => 'application/json']));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function json(Response $response): array
+    {
+        self::assertInstanceOf(JsonResponse::class, $response, 'Expected a JSON response, got: ' . $response->content());
+
+        return (array) $response->decoded();
+    }
+
+    protected function assertStatus(int $expected, Response $response): void
+    {
+        self::assertSame($expected, $response->status(), $response->content());
+    }
+}

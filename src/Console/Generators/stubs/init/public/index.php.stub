@@ -1,0 +1,16 @@
+<?php
+
+declare(strict_types=1);
+
+// PHP built-in server ("vendor/bin/racin serve"): serve existing static files directly.
+if (PHP_SAPI === 'cli-server') {
+    $file = __DIR__ . parse_url((string) $_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+    if (is_file($file) && !str_ends_with($file, '.php')) {
+        return false;
+    }
+}
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+(new Racin\Application(dirname(__DIR__)))->run();

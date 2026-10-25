@@ -38,6 +38,7 @@ final class Kernel
         Commands\QueueFlushCommand::class,
         Commands\MailTestCommand::class,
         Commands\WebSocketServeCommand::class,
+        Commands\InitCommand::class,
         Commands\GenerateCommand::class,
         Commands\DestroyCommand::class,
     ];

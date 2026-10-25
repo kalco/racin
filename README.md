@@ -14,47 +14,42 @@ image uploads, translations and a WebSocket server.
 
 ```bash
 composer require rokastudio/racin
+vendor/bin/racin init --url=http://my-api.local
+composer dump-autoload
+composer require --dev phpunit/phpunit
 ```
 
-The smallest application is a front controller and a routes file:
+`init` writes the starter files of an API (existing files are kept unless `--force`):
 
-```php
-// public/index.php  (the web server's document root is public/)
-require dirname(__DIR__) . '/vendor/autoload.php';
+| | |
+|---|---|
+| `public/index.php`, `public/.htaccess` | front controller; point the web server's document root at `public/` |
+| `public/uploads/` | uploaded images, with an `.htaccess` that stops scripts from running there |
+| `.env`, `.env.example` | settings, with a new `APP_KEY` |
+| `config/*.php` | app, auth, database, cache, cors, filesystems, logging, mail, queue, broadcasting |
+| `routes/api.php` | `/v1/auth/*` routes and the `// racin:resources` marker the generators use |
+| `app/Models/User.php`, users migration | users with a `role` (`user`, `admin`, ...; permissions in `User::PERMISSIONS`) |
+| `app/Controllers/ApiController.php` | base controller: token check, `checkPermission()`, uploads |
+| `app/Controllers/Api/V1/AuthController.php` | register, login, me, refresh, logout, logout-all |
+| `database/seeders/` | `DatabaseSeeder` and `AdminUserSeeder` (first admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD`) |
+| `tests/`, `phpunit.xml` | `ApiTestCase` on an in-memory SQLite database, and auth tests |
 
-(new Racin\Application(dirname(__DIR__)))->run();
-```
-
-```php
-// routes/api.php  ($router and $app are in scope)
-$router->get('/ping', fn () => ['pong' => true]);
-```
-
-Everything else is optional and has defaults: `.env` (`APP_KEY`, `DB_*`, ...), `config/*.php`
-(`app`, `auth`, `database`, `cache`, `cors`, `filesystems`, `logging`, `mail`, `queue`, `broadcasting`),
-`database/migrations`, `database/seeders`, `lang/`, `storage/` (logs, cache; created when needed).
-Send every request that is not a file to `public/index.php` (Apache: a `RewriteRule ^ index.php [L]`
-`.htaccess`, also passing the `Authorization` header with `E=HTTP_AUTHORIZATION:%{HTTP:Authorization}`).
-
-The console is `vendor/bin/racin <command>` (run it in the project root); a project may also keep its
-own `racin` file. The examples below write `php racin`.
+It also adds the `App\`, `Database\Seeders\` and `Tests\` autoload entries to `composer.json`
+(options: `--name="My API"`, `--url=...`, `--db=my_api`). Then set `DB_*` and `ADMIN_*` in `.env` and:
 
 ```bash
-vendor/bin/racin key:generate        # needs a .env file
-vendor/bin/racin serve --port=8000   # development server
+vendor/bin/racin migrate --seed                                    # users table + first admin
+vendor/bin/racin g scaffold Post title:string{150} body:text cover:image
+vendor/bin/racin migrate
+vendor/bin/phpunit
 ```
 
-Generated code (`g scaffold`, `make:*`) goes to `app/` in the `App\` namespace and seeders to
-`database/seeders` (`Database\Seeders\`), so add those to your project's `composer.json`:
+`POST /v1/auth/login` with the admin's email and password returns `token.access_token`; send it as
+`Authorization: Bearer <token>` to create, update and delete posts (`/v1/posts`).
 
-```json
-"autoload": {
-    "psr-4": {
-        "App\\": "app/",
-        "Database\\Seeders\\": "database/seeders/"
-    }
-}
-```
+The console is `vendor/bin/racin <command>`, run in the project root (the examples below write
+`php racin`). Without `init`, the smallest application is `public/index.php` with
+`(new Racin\Application(dirname(__DIR__)))->run();` and a `routes/api.php`; every config file is optional.
 
 ## Development
 
@@ -106,7 +101,7 @@ Resource routes, like Rails' `resources :posts` (the action names are Rails'):
 $router->resource('posts', PostsController::class);
 //   GET /posts index · POST /posts create · GET /posts/{id} show · PATCH|PUT /posts/{id} update · DELETE /posts/{id} destroy
 $router->resource('posts.comments', CommentsController::class, only: ['index', 'create']);
-//   /posts/{post_id}/comments — the parent id reaches actions and filters as $post_id
+//   /posts/{post_id}/comments (the parent id reaches actions and filters as $post_id)
 $router->resource('photos', PhotosController::class, except: ['update'], middleware: 'throttle:30,1');
 ```
 
@@ -177,7 +172,7 @@ final class UsersController extends ApiController
 
     public function __construct()
     {
-        // before_action ..., only: [...]  — filters run in the order they are declared
+        // before_action ..., only: [...]; filters run in the order they are declared
         $this->beforeAction(fn () => $this->checkPermission('users', 'read'), except: ['index']);
         $this->beforeAction('setUser', only: ['show', 'update']);
         $this->beforeAction(fn () => $this->checkTenantAccess($this->user), only: ['show']);
@@ -249,8 +244,8 @@ that a computed attribute reads (e.g. `['user']` for a `user_name` field).
 
 ## Files & images
 
-`config/filesystems.php` defines disks (`public` → `public/uploads`, served at `APP_URL/uploads`;
-`local` → `storage/app`).
+`config/filesystems.php` defines disks; without it `public` → `public/uploads`, served at `APP_URL/uploads`, and
+`local` → `storage/app`.
 
 ```php
 $disk = app(Racin\Storage\StorageManager::class)->disk('public');
@@ -473,7 +468,7 @@ $token = $app->make(Racin\Auth\Jwt::class)->encode(['sub' => $user->id, 'ver' =>
 Clients send `Authorization: Bearer <token>`; the `auth` middleware verifies signature/expiry, rejects
 revoked tokens and loads the user through `auth.model` (or a custom `Auth\UserProvider` set as `auth.provider`).
 
-- **Revoking one token:** `$app->make(TokenBlacklist::class)->revoke($request->attribute('token'))` — its
+- **Revoking one token:** `$app->make(TokenBlacklist::class)->revoke($request->attribute('token'))`: its
   `jti` is kept in the cache until the token would have expired (use a shared cache, e.g. Redis, in production).
 - **Revoking all of a user's tokens:** issue tokens with a `ver` claim equal to the user's `token_version`
   column and increment that column; `ModelUserProvider` rejects tokens with an older version.
@@ -503,7 +498,7 @@ final class SendInvoice extends Racin\Queue\Job
     public int $tries = 5;                  // then it goes to failed_jobs
     public int|array $backoff = [10, 60];   // seconds between attempts
 
-    public function __construct(public readonly int $orderId) {}   // scalars/arrays only — pass ids
+    public function __construct(public readonly int $orderId) {}   // scalars/arrays only, so pass ids
 
     public function queue(): string { return 'mail'; }
 
@@ -601,7 +596,7 @@ writes need the "<table>.manage" permission, strong params, image upload), a tes
 data (registered in `DatabaseSeeder`) and a Postman folder. Existing files are not
 overwritten without `--force`.
 
-Field syntax: `name[?]:type[{args}][:unique|:index]` — `?` means nullable. Types: string{len}, text,
+Field syntax: `name[?]:type[{args}][:unique|:index]`, where `?` means nullable. Types: string{len}, text,
 longtext, integer, bigint, smallint, tinyint, decimal{p,s}, float, boolean, date, datetime, json,
 enum{a,b,c}, uuid, references (`user:references` → `user_id` + foreign key + relation), image.
 

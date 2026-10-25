@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'name' => env('APP_NAME', '{{APP_NAME}}'),
+
+    // local | testing | production
+    'env' => env('APP_ENV', 'production'),
+
+    // Never enable in production: error responses include exception details.
+    'debug' => (bool) env('APP_DEBUG', false),
+
+    'url' => env('APP_URL', 'http://localhost'),
+
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
+
+    // Default language, fallback for missing lines, and the languages clients may ask for
+    // (Accept-Language header or ?lang=). Translations live in lang/<locale>/*.php.
+    'locale' => env('APP_LOCALE', 'en'),
+    'fallback_locale' => 'en',
+    'locales' => ['en'],
+
+    // Signs auth tokens and real-time broadcasts. Generate with: vendor/bin/racin key:generate
+    'key' => env('APP_KEY', ''),
+
+    // Reverse proxies / load balancers whose X-Forwarded-* headers are trusted (comma separated IPs).
+    'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', (string) env('TRUSTED_PROXIES', ''))))),
+
+    // Middleware run on every request, outermost first.
+    'middleware' => [
+        'cors',
+        'locale',
+    ],
+
+    // name => class. Built in: auth, throttle, cors, role, can, locale.
+    'middleware_aliases' => [
+    ],
+
+    // name => list of middleware, usable like an alias.
+    'middleware_groups' => [
+    ],
+
+    // Service providers: register() binds services, boot() runs after all are registered.
+    'providers' => [
+    ],
+
+    // Your own console commands (classes extending Racin\Console\Command).
+    'commands' => [
+    ],
+];

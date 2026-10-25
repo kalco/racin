@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+use Racin\Database\Migrations\Migration;
+use Racin\Database\Schema\Blueprint;
+use Racin\Database\Schema\Schema;
+
+return new class extends Migration {
+    public function up(Schema $schema): void
+    {
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name', 100);
+            $table->string('email', 255)->unique();
+            $table->string('password', 255);
+            $table->string('role', 30)->default('user');   // user | admin | ... (App\Models\User::PERMISSIONS)
+            $table->integer('token_version')->default(0);  // bumped by "logout everywhere"
+            $table->timestamps();
+        });
+    }
+
+    public function down(Schema $schema): void
+    {
+        $schema->dropIfExists('users');
+    }
+};

@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * API routes. $router (Racin\Routing\Router) and $app are in scope.
+ *
+ * $router->resource('posts', PostsController::class) gives index, create, show, update, destroy.
+ * Authentication and permissions are controller filters (App\Controllers\ApiController).
+ * "vendor/bin/racin g scaffold ..." adds its resource line above the racin:resources marker.
+ */
+
+use App\Controllers\Api\V1\AuthController;
+use Racin\Routing\Router;
+
+$router->get('/', fn () => ['data' => ['name' => config('app.name'), 'framework' => 'Racin ' . Racin\Application::VERSION]])->name('home');
+
+$router->group(['prefix' => 'v1', 'as' => 'v1.'], function (Router $router): void {
+    $router->group(['prefix' => 'auth', 'as' => 'auth.'], function (Router $router): void {
+        $router->post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1')->name('register');
+        $router->post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+
+        $router->group(['middleware' => ['throttle:120,1']], function (Router $router): void {
+            $router->get('/me', [AuthController::class, 'me'])->name('me');
+            $router->post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
+            $router->post('/logout', [AuthController::class, 'logout'])->name('logout');
+            $router->post('/logout-all', [AuthController::class, 'logoutAll'])->name('logout-all');
+        });
+    });
+
+    $router->group(['middleware' => ['throttle:120,1']], function (Router $router): void {
+        // racin:resources
+    });
+});

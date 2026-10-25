@@ -1,0 +1,13 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'path' => storage_path('logs'),
+
+    // debug | info | notice | warning | error | critical | alert | emergency
+    'level' => env('LOG_LEVEL', 'debug'),
+
+    // One file per day (racin-YYYY-MM-DD.log) instead of a single racin.log.
+    'daily' => true,
+];

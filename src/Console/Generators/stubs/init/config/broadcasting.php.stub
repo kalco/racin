@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // websocket (needs "vendor/bin/racin websocket:serve") | log | null | array (tests)
+    'driver' => env('BROADCAST_DRIVER', 'null'),
+
+    'websocket' => [
+        // Public WebSocket endpoint clients connect to: ws://<host>:<port>
+        'host' => env('WEBSOCKET_HOST', '0.0.0.0'),
+        'port' => (int) env('WEBSOCKET_PORT', 6001),
+
+        // Internal port where the application hands over broadcasts (keep it on localhost).
+        'internal_host' => '127.0.0.1',
+        'internal_port' => (int) env('WEBSOCKET_INTERNAL_PORT', 6002),
+
+        // Browser origins allowed to connect ("*" = any); same format as CORS.
+        'allowed_origins' => array_values(array_filter(array_map('trim', explode(',', (string) env('WEBSOCKET_ALLOWED_ORIGINS', env('CORS_ALLOWED_ORIGINS', '*')))))),
+
+        'max_payload' => 65536,
+        'max_clients' => 5000,
+    ],
+];

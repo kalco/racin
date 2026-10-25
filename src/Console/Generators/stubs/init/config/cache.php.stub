@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // file | redis | array
+    'driver' => env('CACHE_DRIVER', 'file'),
+
+    // file driver
+    'path' => storage_path('cache/data'),
+
+    // redis driver: connection from config/database.php "redis" and key prefix
+    'redis_connection' => 'default',
+    'redis_prefix' => '{{SLUG}}:cache:',
+
+    // prefix added to every key (all drivers)
+    'prefix' => '',
+];

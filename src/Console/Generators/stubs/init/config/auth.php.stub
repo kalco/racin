@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    // Model loaded from the token's "sub" claim (or set 'provider' to a UserProvider class).
+    'model' => App\Models\User::class,
+
+    // HS256 | HS384 | HS512, signed with APP_KEY
+    'algorithm' => 'HS256',
+
+    // Access token lifetime in seconds.
+    'ttl' => (int) env('JWT_TTL', 3600),
+
+    // Optional "iss" claim written and required on every token.
+    'issuer' => env('JWT_ISSUER'),
+
+    // Clock skew tolerance in seconds.
+    'leeway' => 30,
+];
